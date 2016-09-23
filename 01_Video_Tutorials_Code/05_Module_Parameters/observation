@@ -1,0 +1,30 @@
+This is Observation File of Learning Linux Device Drivers Development - 05. Module Parameters
+
+1. Include the file - <linux/moduleparam.h>
+2. Use function 'module_param( <variable>, <variable_type>, <permission_field_set_to_zero>)'
+3. It is optional to pass module parameter, hence the value of module parameter in code must be initialized to some default value. If not initialized, it may lead to some problems, I tried but didnot get any error but also did not get any output for index value in the code.
+	* (This observation is when I set permission field = 0 in module_param function)
+		- Notice that if default value is not initialized then '/sys/module/<module_name>/parameters' is not created
+		- This is because giving permission field as 0 is like telling the compiler that we never wish to change the value of the parameter.
+	* Once you set the Permission field - see the observations in Point No. 5.
+4. On loading/inserting module
+	- If Parameter is not passed, the module will run with default value specified for the variable.
+	- If Parameter value is passed, remember it should have same name as in source code
+		* eg: sudo insmod xyz_module.ko <variable_name>=<parameter_value>
+		* NOTE: there should not be any space near equal to '=' sign, otherwise Error
+
+5. Permission Field set to '644' - (Octal Value)
+	* 6 - Sets the read/write permission for Creator/Owner of Module.
+	* 4 - Sets the read permission for User in the Group.
+	* 4 - Sets the read permission for User who are not in the Group.
+	* Now you can see the 'parameters' directory and a variable in that directory when you run the command
+		- ls -l /sys/module/<module_name>/parameters/
+	* To see Permission of that parameter variable
+		- ls -l /sys/module/<module_name>/parameters/<variable_name>
+	* To see Value of that parameter variable
+		- cat /sys/module/<module_name>/parameters/<variable_name>
+	* To update Value of that parameter variable
+		- echo <updated-value> | sudo tee /sys/module/<module_name>/parameters/<variable_name>
+		- 'tee' command is used to view and store (both at the same time) the output of some other command.
+		- 'tee' command writes to STDOUT and file at the same time.
+	

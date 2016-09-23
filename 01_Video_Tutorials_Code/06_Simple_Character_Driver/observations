@@ -1,0 +1,31 @@
+Observation during Experiment 06 - Simple Character Driver
+
+1. Include <linux/fs.h> header file for character driver support.
+2. Register our module as Character Driver using the function shown below in init() function of module
+	* register_chrdev(<major_no>, <name_of_driver>,<file_operations> );
+3. Unregister character driver using the function shown below in exit() function of module
+	* unregister_chrdev(<major_no>, <name_of_driver> );
+	* Notice the name and major no. must be exactly same as in register function.
+4. Specifying 3rd Parameter of register function i.e. file_operations
+	* file_operations is a structure in linux/fs.h file/
+	* see /lib/modules/$(uname -r)/build/linux/fs.h 
+		- Search for structure file_operations
+		- See various functions and variables
+		- We will deal with open, release, read, write, owner - Hence we need to write 4 functions
+
+5. Specifying the File Operation Functions
+	* Copy and Paste the prototype of the functions from linux/fs.h
+	* Give dummy definition by printing function name in these functions.
+
+6. Build, Load module as usual
+   To confirm that our driver is loaded for major number specified by us in source code
+	* cat /proc/devices - see the list of character drivers
+7. Testing our driver
+	* Make a device for our driver 
+		- sudo mknod -m <permission(666)> /dev/<device_name> <device_type> <major_no> <minor_no>
+	* Checking open,read,close
+		- cat /dev/simple_char_device
+	* Checking open,write,close
+		- echo "testing" > /dev/simple_char_device
+
+8. When you reboot, the device which we made is automatically removed.

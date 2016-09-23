@@ -1,0 +1,22 @@
+Observation of Experiment 03 - Simple Modules in Multiple Files
+
+1. Init Function, Exit Functions are kept in two different files. (No Changes in source from previous experiment)
+2. Both the Files have their own binding macros.
+3. MakeFile changes to compile the two C files to build a single module
+	* adding a statement to build a module named 'ex0203_simple_module' which is a combination of two C files.
+	* How would compiler know the two modules?
+	* Also, it will give error - bcoz there is no corresponding C file for 'ex0203_simple_module'
+	* Solution is to define the object files to generate the 'ex0203_simple_module.0' file
+		- ex0203_simple_module-objs	:=	ex02_simple_module_init.o	ex03_simple_module_exit.0
+		- Here '-objs' tells that these are the object files for make current file
+	* NOTE: Only one '.ko' file will be created as it is overridden in makefile. But as many '.o' files as many C Files.
+4. If you run insmod/rmmod without 'sudo' - Error is Operation not permitted.
+
+5. Module License: (ScreenShot)
+	* If not specified - Kernel believe that it is an outside module and you are not willing to share your module.
+	* It gives messages in '/var/log/syslog' that 'module license is unspecified taints kernel'
+	* taints represents that it can harm/hack the kernel.
+	* If License is not specified, some of the functionalities of kernel are disabled for this module.
+		- eg : Disabling lock debugging due to kernel taints
+		- You won't be allowed usb core functionalities - so you can not write a driver.
+

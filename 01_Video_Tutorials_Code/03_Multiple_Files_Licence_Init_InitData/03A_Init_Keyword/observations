@@ -1,0 +1,17 @@
+Observations of Experiment 03 (A) - Use of __init keyword , __initdata keyword
+
+1. All the functions are given memory in the kernel space of RAM when you load them.
+2. Function like initialization are called only once. Hence, they occupy unnecessary space.
+	* attach a keyword in starting of initialization function '__init'
+	* This will free up the memory space occupied by the initialization function after the initialization is done.
+3. Experiment: Make two same modules (__init keyword and __initdata keyword)
+	* one module without __init keyword in front of init() function
+	* another module with __init keyword in front of init() function
+	* load both the modules, do 'lsmod | grep ex' --- See the difference in size ( I didn't got it)
+4. Repeat Experiment at Step 3 with adding __initdata to a variable declared as global. ( Again I got no change).
+5. __init can be used with only those function which are only used in init() function. If Used with other functions, the kernel will deallocate these functions after initialization and when called at some other stage, they would cause a page fault and Kernel will crash.( Will try this on Virtual Machine to Crash Kernel). For Proper working - see ex03_simple_module.c
+	* When I am calling both functions in init, f2() functions gets printted later on when we exit. - WHY ?
+
+6. If any Function do not accepts any arguments then put 'void' - otherwise improper function definition error.
+
+ 

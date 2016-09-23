@@ -1,0 +1,21 @@
+Observations during Experiment 04 - Exporting Symbols
+
+(See : Many Useful Snapshots)
+0. Make File Observations
+	* There must be space between 'ifneq' and (<condition>), else Error is 'Missing Separator'
+
+1. Macro Used: EXPORT_SYMBOL(<FUNCTION NAME> or <GLOBAL VARIABLE NAME> );
+2. Exporting Function
+	* Make two modules - exporting_symbol(uses export macro)  and using_symbol (uses the function of exporting_symbol, must define function prototype)
+	* Load using_symbol module before exporting_symbol - ERROR
+		- On Terminal : Error: Unknown symbol in module.
+		- In /var/log/syslog: specifies used symbol is not in kernel space.
+	* Now, Load modules in sequence - exporting_symbol and using_symbol
+		- See /var/log/syslog - works fine
+		- lsmod operation - See the 'Used by' column specified for 'exporting_symbol' module
+
+3. Awesome Observation - if you unload the module on which other module is dependent, Error : Cant Unload, Module Used.
+	* Doubts - Unload dependent moduels - no output, then When you unload the module on which other modules are dependent, then you see the entire output ???
+  
+4. Exporting Global Variables
+	* Must use extern to use the exported variable in using_symbol module.

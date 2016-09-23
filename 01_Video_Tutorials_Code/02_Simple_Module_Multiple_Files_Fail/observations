@@ -1,0 +1,10 @@
+Observation of Experiment 02 - Simple Modules in Multiple Files
+
+1. Init Function, Exit Functions are kept in two different files.
+2. Both the C files have their respective binding to init and exit macro functions.
+3. Module with Exit Function only
+	* Loads, unloads easily - No issues
+4. Module with Init Function only
+	* Loads easily - No issue
+	* On Unloading - Device is Busy Message - Can not unload it (ScreenShot)
+		- Only Way to Remove it is to restart kernel

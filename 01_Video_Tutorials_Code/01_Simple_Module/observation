@@ -1,0 +1,74 @@
+This is Observation File of Learning Linux Device Drivers Development - 01. Simple Module
+
+1. To shorten Path : PS1="\u \W $" (u for username, w for workspace)
+2. Learning about Screen Utility in Terminal.
+
+	* sudo apt install screen
+	* exit - to terminate a Bash
+	* :remove - to remove a particular split
+	* Press 'ctrl+a' before every command
+	* 'S' - split horizontally
+	* '|' - split vertically
+	* 'A' - rename Bash title
+	* '"' - bash list to switch
+	* 'c' - start terminal in new bash
+	* 'TAB' - switch tabs
+	* 'Space' - Go to Next Bash
+	* 'Crtl+n' - Go to nth Bash
+	* '?' - Help to see all commands
+
+3. Learnt Vim Editor for working on Terminal efficiently.
+	* vimdiff file1 file2 - to see the difference
+	
+
+4. Building Simple Modules:
+	* C file including two function init() and exit().
+	* Load and Unload modules in Kernel. 
+	* Name of your init and exit function can be anything
+	* Register those Function with Kernel init and exit function Macros.
+
+5. Creating Make File (ScreenShot)
+	* Study GNU Make - MakeFile syntax. 
+	* Some Obsevation - The directory in which you have created your module's C File. Should not contain spaces in its name.Otherwise Error occurs which is displayed below.
+	* Specify Loadable Module Objects.
+	* Specify condition for CROSS_COMPILE as given in makefile.
+
+6. Error Occurred during Compilation/Build:
+	* Possible Reason:
+		- Name of Directory has Spaces
+		- Makefile syntax wrong for $(pwd) 
+		- pwd is written in capital letters
+		- Cross compilation is enabled
+		- Clean should have a command, not a file
+
+	Error: (ScreenShot)
+	arch/x86/Makefile:148: CONFIG_X86_X32 enabled but no binutils support
+	Makefile:676: Cannot use CONFIG_CC_STACKPROTECTOR_STRONG: -fstack-protector-strong not supported by compiler
+
+7. Files Created on Successfull Compilation/Build:
+
+	* ex01_simple_module.ko
+	* ex01_simple_module.mod.c
+	* ex01_simple_module.mod.o
+	* ex01_simple_module.o
+	* Module.symvers
+	* modules.order
+
+8. Load/Unload/View Module into kernel
+	* Load - sudo insmod ./ex01_simple_module.ko (ScreenShot)
+	* View - lsmod ( See topmost module)	(ScreenShot)
+	* Unload - sudo rmmod ex01_simple_module (ScreenShot)
+
+9. Output printed using printk() can be found in /var/log/syslog
+	* tail -f /var/log/syslog
+
+10. To Do
+	* Study Full GNU Make Book
+		- echo $(pwd), echo ${PWD}, echo $(shell pwd) 
+		- Understand Makefile rules for them.
+		- make --help
+	* Find out all the files created on Build ?
+	* Find out why Module.symvers, modules.order ?
+	* Find CargoCult ?
+	* Learn to write scripts.
+	* Study README file of Linux Kernel 4.x
