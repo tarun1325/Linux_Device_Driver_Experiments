@@ -1,0 +1,230 @@
+/*
+*	Observations on Assignment 01 - Linux Device Drivers Development
+*	Tarun Jain | MT2015120 | Tarun.Jain@iiitb.org
+*	Date:	28th Sep. 2016
+*/
+--------------------------------------------------------------------------------
+*** SETTING UP RASPBERRY PI
+/* All Screenshot for this is saved under Directory - 01_Setting_Up_Raspberry_Pi*/
+---------------------------------------------------------------------------------
+1. Steps for this are recorded in my notebook. I will update it later.
+
+---------------------------------------------------------------------------------
+*** Experiments:
+/* All Screenshot for this is saved under Directory - 02_Experiments*/
+---------------------------------------------------------------------------------
+
+1. RUN MAKE IN BLINKER AND DIGIOUT DIRECTORIES TO BUILD THE MODULES SUCCESSFULLY.
+
+	(a)- $(uname -r) return the Kernel Version as 4.4.21-v7+, but 'build' directory is present in 4.4.22-v7+. Hence, instead of writing $(uname -r) during make, I manually entered the version. (ScreenShot - 01_a_Build_Directory_Location.png)
+	(b) - No Error. Successful make of Digiout Device. (ScreenShot - 01_b_Successful_Make__Digiout_Device.png)
+	(c) - No Error. Successful make of Blinker Deriver. (ScreenShot - 01_c_Successful_Make_Blinker_Driver.png)
+
+	~ Many Files were created, Error observed, debug technique applied is mentioned below (Exp done for simple module):
+	
+		Error Occurred during Compilation/Build:
+		* Possible Reason:
+			- Name of Directory has Spaces
+			- Makefile syntax wrong for $(pwd) 
+			- pwd is written in capital letters
+			- Cross compilation is enabled
+			- Clean should have a command, not a file
+
+		Error: (ScreenShot - 00_Binutils_Error.png)
+		arch/x86/Makefile:148: CONFIG_X86_X32 enabled but no binutils support
+		Makefile:676: Cannot use CONFIG_CC_STACKPROTECTOR_STRONG: -fstack-protector-strong not supported by compiler
+
+		Files Created on Successfull Compilation/Build:
+
+			* ex01_simple_module.ko
+			* ex01_simple_module.mod.c
+			* ex01_simple_module.mod.o
+			* ex01_simple_module.o
+			* Module.symvers
+			* modules.order
+#################################################################################
+2. CHECK THE PROPER BINARY (x86 or ARM) Format
+
+	(a) - Object Files were created. On 'modinfo' command, it shows ARM7.
+
+#################################################################################
+
+3. PRINT MOUDLE INFO FOR BOTH MODULEAS AND POINT OUT THE PARAMETER DETAILS
+
+	(a) - Blinker Driver (ScreenShot - 03_a_Modinfo_Blinker_Driver.png)
+
+		~ parm:           limit:wakeup limit (int)
+
+	(b) - Digiout Device (ScreenShot - 03_b_Modinfo_Digiout_Device.png)
+		~ parm:           gpiopin:gpio pin number (int)
+
+	Key Observations:
+	~ It has given module parameters for the module.
+	~ Datatype and Name of the parameters is also mentioned.
+	~ Build for ARMv7.
+	~ Licencse is GPL.
+
+#################################################################################
+4. LOAD BLINKER MODULE AND SHOW THE REGISTRATION OF 'bln' DRIVER IN 'sysfs'
+
+	(a) Load Blinker Driver Module (ScreenShot - 04_a_Load_Blinker_Driver.png)
+		~ sudo insmod blinker.ko
+		~ Run this command while you are in directory where 'blinker.ko' is present.
+		~ Check dmesg file for observing output printed inside module.
+		~ See directory /sys/bus/platform/drivers/ - Here 'bln' directory will appear on loading module.(sysfs)
+		~ 'bln' directory contains 3 write only files (bind, unbind, uevent), symbolic link to module. (ScreenShot - 04_permission denied_write_only_files.png)
+
+#################################################################################
+5. LOAD 'digiout' MODULE AND SHOW ITS 'sysfs' ENTRIES INCLUDING 'gpio' GROUP
+
+	(a) Load Digiout Device Module (ScreenShot - 05_a_Load_Digiout_Device.png)
+		~ sudo insmod digiout.ko
+		~ sysfs changes can be seen in /sys/bus/platform/devices/ - Here 'bln.4' directory will appear on loading module. 
+		~ 'bln.4' directory has data related to attributes gpio, interval.
+		~ 'uevent' file of Device is read/write, but driver is write only.
+
+	(b) GPIO Pin - more /sys/bus/platform/devices/bln.4/gpio/pin
+		~ It will output the pin number for this device ( i.e. 4 in our case).
+ 
+#################################################################################
+6. SHOW AND EXPLAIN THE AUTOMATIC BINDING OF 'digiout' to 'bln' DRIVER
+
+	(a) Automatic Binding (ScreenShot - 06_a_Automatic Binding.png)
+		~ 'bln.4' automatically binds with 'bln' driver and provides a symbolic link to driver in sysfs /sys/bus/platform/devices/bln.4/driver.
+		~ Binding can also be seen through uevent file in /bln.4 directory.
+			DRIVER=bln
+			MODALIAS=platform:bln
+		~ Similarly, the symbolic link to Device can be seen in Driver directory /sys/bus/platform/drivers/bln/bln.4
+	(b) Explanation of Automatic Binding: (Credits: Mr. Ajinkya Bhavalkar) (Source: linux/Documentation/driver-model/Binding.txt)
+		~ There is a Bus Driver for Bus, Here we have used Platform Bus.
+		~ It has a Structure called 'bus_type'
+			* It has 2 Lists: Driver List, Device List for this bus.
+		~ Whenever, device_register() or driver_register() function is called, Bus driver adds them at the end of respective list. 
+		~ Whosoever (device or driver), calls register() - Triggers a 'int match()' function.
+		~ Match Function can accept pointer to device or driver. If Device triggers it, pointer to devices is passed in match, else if Driver triggers it, pointer to driver is passed in match.
+		~ Match() Function Checks accordingly in the list
+			* Accordingly means, if driver triggers then checks the list of devices to match, else check list of drivers if triggered by device.
+		~ Match() function is written true, will inform ALWAYS ONLY DRIVER about the match.
+		~ Driver then calls the PROBE FUNCTION with the matched device pointer as parameter and they get mapped.
+
+#################################################################################
+7. UNBIND THE 'bln.4' DEVICE FROM THE DRIVER AND SHOW ITS EFFECTS IN 'sysfs'
+
+	(a) - Manual Unbind (ScreenShot - 07_a_Unbind_After.png, 07_a_Unbind_Before.png)
+		~ Directory: /sys/bus/platform/drivers/unbind
+		~ Created a root user by running following command:
+			$ sudo passwd root 	/* Create Root User*/
+			/* Create Password*/
+			$ su			/* Login to Root User*/	
+			/*Enter Password*/
+			/* You have Logged in as Root User*/
+		~ Command to Unbind: $ echo -n "bln.4" > unbind, Writing to unbind file.
+		~ On unbind, the symbolic link in both the driver and device directory is removed by sysfs.
+		~ To Bind again: Command: $  echo -n "bln.4" > bind, Writing to bind file.
+	- Dmesg: (ScreenShot - 07_08_Dmesg_Bind_Unbind.png)
+
+#################################################################################
+8. BIND THE DEVICE AGAIN TO THE DRIVER AND PROVE IT IN 'sysfs'
+
+	(a) Manual Bind (ScreenShot - 08_a_Bind_Before.png, 08_a_Bind_After.png)
+		~ To Bind again: Command: $  echo -n "bln.4" > bind, Writing to bind file.
+		~ On bind, the symbolic link in both the driver and device directory appears, maintained by sysfs.
+		~ Directory: /sys/bus/platform/drivers/
+	
+	- Dmesg: (ScreenShot - 07_08_Dmesg_Bind_Unbind.png)
+
+#################################################################################
+9. UNLOAD 'blinker' MODULE AND SHOW ITS EFFECTS ON 'digiout' IN 'sysfs'
+
+	~ (ScreenShot  09_Unload_Blinker.png)
+	~ sudo rmmod blinker, Command to remove the blinker module.
+	~ Directory /sys/bus/platform/drivers/ - Removes the 'bln' - maintained by sysfs.
+	~ Symbolic link is removed from Device /bln.4
+	~ Dmesg: Prints out the unregister function, device remove function.
+
+	(a) UNLOAD 'digiout' MODULE AND SHOW THAT IT IS NO LONGER LOADED
+		~ (ScreenShot - 09_a_Unload_Device_Also.png)
+		~ sudo rmmod digiout
+		~ lsmod: You can not see digiout module now, as it is unloaded.
+		~ Dmesg: exiting module digiout
+			 platform bln.4: unregistering gpio device bln
+                         platform bln.4: releasing gpio device bln
+	
+		~ Directory /sys/bus/platform/devices/ - Removes the 'bln.4' - maintained by sysfs.
+
+	(b) RELOAD THE BLINKER WITH A DIFFERENT PARAMETER AND SHOW ITS LOG ENTRIES
+
+		~ (ScreenShot - 09_b_Load_Blinker_With_Parameters.png)
+		~ sudo insmod blinker.ko limit=7
+		~ Dmesg: Output according to new limit values.
+		~ Directory: /sys/bus/platform/drivers/bln appears again, maintained by sysfs.
+		~ If this command is run: 
+			$ sudo insmod blinker.ko 7
+			Dmesg: blinker: unknown parameter '7' ignored
+
+#################################################################################
+---------------------------------------------------------------------------------
+*** Study the Following:
+/* All Screenshot for this is saved under Directory - 03_Study_The_Following*/
+---------------------------------------------------------------------------------
+
+1. WHAT HAPPENS IF YOU LOAD 'blinker' A SECOND TIME ?
+
+	~ (ScreenShot - 01_Load_Driver_Twice.png)
+	~ OS do not allow to load module again as the same file exists in /lib/modules/$(uname -r)/build directory.
+	~ insmod: ERROR: could not insert module blinker.ko: File exists 
+
+#################################################################################
+2. WHAT HAPPENS IF YOU LOAD 'digiout' A SECOND TIME ?
+
+	~ (ScreenShot - 02_Load_Device_Twice.png)
+	~ OS do not allow to load module again as the same file exists in /lib/modules/$(uname -r)/build directory.
+	~ insmod: ERROR: could not insert module digiout.ko: File exists
+
+#################################################################################
+3. REBUILD THE 'digiout' MODULE BY CHANGING 'led4' DEVICE NAME FROM 'bln' to 'led'
+
+	~ Change the .name parameter in digiout.c to 'led' ( Inside platform_device Structure ).
+	(a) WHEN YOU LOAD THIS MODULE, DOES 'bln' DRIVER BIND TO THE DEVICE AUTOMATICALLY ?
+		~ No, It does not bind automatically.
+		~ (ScreenShot: 03_a_Changing_Device_Name_Build.png)
+
+	(b) HOW WILL YOU NOW BIND THIS DEVICE TO 'bln' DRIVER ?
+
+		~ Wrong Way:
+			* Directly run the echo "led.4" > bind in /sys/bus/platform/driver/bln/ directory.
+			* Error:: bash: echo: write error: No such device
+			* (ScreenShot - 03_b_Error_Direct_Manual_Bind_From_Driver.png)
+		
+		~ Correct Way:
+			~ To bind a device to a driver, the device must first not be controlled by any other driver. To ensure this, look for the "driver" symlink in the device directory.
+			~ Go to Directory: /sys/bus/platform/devices/led.4/
+				* You will see a file, 'drivers_override' , If you open it you will see null value in that file
+			~ echo "<driver_name>" > drivers_override :: This will set the driver for the device. (ScreenShot - 03_b_Telling_Driver_To_Device.png)
+				* $ echo "bln" > drivers_override
+			~ Now, when you can bind the driver in /sys/bus/platform/driver/bln
+				* $ echo "led.4" > bind 		/*Root User*/
+			~ (ScreenShot - 03_b_Bind_Driver_Manually.png)
+#################################################################################
+4. WHAT HAPPENS IF YOU RETAIN THE NAME BUT CHANGE THE 'id' FROM '4' TO '6' ?
+
+	~ Wrong Way:
+		- If changed only in platform_device structure, then mismatch is there - change GPIO_PIN_OUT
+		- (ScreenShot - 04_Changing_at_one_place.png)
+	~ Correct Way:
+		- (ScreenShot - 04_Inserted_Successful.png, 04_Linked_Automatically.png)
+		- Change id to 6 at both the places in source code.
+		- If name is not changed and only id is changed, then the automatically binding is done. Else do manual binding.
+		- Symbolic Links reflect the "bln.6" instead of "bln.4". 
+
+#################################################################################
+5. WHAT HAPPENS IF YOU TRY TO LOAD A MODULE COMPILED FOR 'x86 kernel' on Raspberry Pi ?
+
+	~ Build code of Blinker on 'x86' machine, then transfered the code to Raspberry Pi through Pendrive/SCP/SSHFS.
+	~ Error on Inserting:
+		* insmod: ERROR: could not insert module blinker.ko: Invalid module format
+	~ (ScreenShot - 05_Insering_Module_Build_On_Other_Platform.png )
+
+#################################################################################
+
+Tarun Jain | MT2015120 | Tarun.Jain@iiitb.org
